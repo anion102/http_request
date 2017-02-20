@@ -29,18 +29,23 @@ module HttpRequest
 
 # http:post  request's data can be data form
   def post_form(*args)
-    begin
-      uri = URI.parse(args[0])
-      Net::HTTP.start(uri.host,uri.port){|http|
-        req = Net::HTTP::Post.new(uri.path,args[2])
-        req.set_form_data args[1]
-        @res = http.request(req)
-        # return JSON.parse(res.body)
-      }
-      return JSON.parse(@res.body)
-    rescue Exception=>e
-      puts e.message
-    end
+	begin
+	  uri = URI.parse(args[0])
+	  res = Net::HTTP.start(uri.host,uri.port){|http|
+		req = Net::HTTP::Post.new(uri.path,args[2])
+		req.set_form_data args[1]
+		http.request(req)
+	  }
+	  return JSON.parse(res.body)
+	rescue Exception=>e
+	  if res==nil
+		return e.message
+	  elsif !res.body.match(/{.*}/)
+		return res.code+'-'+e.message
+	  else
+		return e.message
+	  end
+	end
   end
 
 #http:get  request's data can be json string
@@ -62,17 +67,46 @@ module HttpRequest
     end
   end
 
-#get请求 请求包是表单格式，返回body并转换成json对象text/html;charset=UTF-8
-  def get_form *args
-    uri = URI.parse(args[0])
-    uri.query=URI.encode_www_form(args[1])
-    res = Net::HTTP.get_response(uri)
+  #  URI.encode_www_form([["q", "ruby"], ["lang", "en"]])
+  #    #=> "q=ruby&lang=en"
+  def get_form(*args)
     begin
+      uri = URI.parse(args[0])
+      uri.query=URI.encode_www_form(args[1])
+      res = Net::HTTP.get_response(uri)
       return JSON.parse(res.body)
     rescue Exception=>e
-      puts e.message
+      if res==nil
+        return e.message
+      elsif !res.body.match(/{.*}/)
+        return res.code+'-'+e.message
+      else
+        return e.message
+      end
     end
   end
+
+#get请求 请求包是表单格式，返回body并转换成json对象text/html;charset=UTF-8
+  # http:post  request's data can be data form
+    def get_form_with_header(*args)
+      begin
+        uri = URI.parse(args[0])
+        res = Net::HTTP.start(uri.host,uri.port){|http|
+          req = Net::HTTP::Get.new(uri.path,args[2])
+          req.set_form_data args[1]
+          http.request(req)
+        }
+        return JSON.parse(res.body)
+      rescue Exception=>e
+        if res==nil
+          return e.message
+        elsif !res.body.match(/{.*}/)
+          return res.code+'-'+e.message
+        else
+          return e.message
+        end
+      end
+    end
 
 # directly go to url
   def get url
