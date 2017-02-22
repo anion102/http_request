@@ -4,6 +4,7 @@ require 'net/http'
 require 'uri'
 require 'uri/generic'
 require 'json'
+require 'rest-client'
 require_relative 'http_request/version'
 
 module HttpRequest
@@ -19,10 +20,12 @@ module HttpRequest
       end
       return JSON.parse(res.body)
     rescue Exception=>e
-      if e.message!=''
-        p res.code
-        p e.message
-        return false
+      if res==nil
+        return e.message
+      elsif !res.body.match(/{.*}/)
+        return res.code+'-'+e.message
+      else
+        return e.message
       end
     end
   end
@@ -59,10 +62,12 @@ module HttpRequest
       end
       return JSON.parse(res.body)
     rescue Exception=>e
-      if e.message!=''
-        p res.code
-        p e.message
-        return false
+      if res==nil
+        return e.message
+      elsif !res.body.match(/{.*}/)
+        return res.code+'-'+e.message
+      else
+        return e.message
       end
     end
   end
@@ -115,4 +120,21 @@ module HttpRequest
     return JSON.parse(response.body)
   end
 
+
+# post 请求上传文件
+  def up_post(*args)
+    begin
+      res =RestClient.post(args[0],args[1],args[2])
+      return JSON.parse(res.body)
+    rescue Exception=>e
+      if res==nil
+        return e.message
+      elsif !res.body.match(/{.*}/)
+        return res.code+'-'+e.message
+      else
+        return e.message
+      end
+    end
+
+  end
 end
